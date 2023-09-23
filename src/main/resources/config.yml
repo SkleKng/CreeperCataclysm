@@ -5,6 +5,7 @@ lobby:
   z: 30.5
   yaw: 0
   pitch: 0
+specialBlocks:
 maps:
   test:
     attackerspawn:

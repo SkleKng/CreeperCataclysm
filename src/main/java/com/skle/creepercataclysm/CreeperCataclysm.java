@@ -6,8 +6,14 @@ import com.skle.creepercataclysm.commands.debug.*;
 import com.skle.creepercataclysm.listeners.*;
 import com.skle.creepercataclysm.managers.*;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+
+
 
 //TODO: add shop items, custom enchants
 
@@ -20,6 +26,8 @@ public final class CreeperCataclysm extends JavaPlugin implements CreeperCatacly
     private final GoldManager goldManager = new GoldManager(this);
     private final ShopManager shopManager = new ShopManager(this);
     private final ZoneManager zoneManager = new ZoneManager(this);
+
+    private final ProtocolManager manager = ProtocolLibrary.getProtocolManager();
 
     private int MAX_PLAYERS = 2;
     @Override
@@ -39,6 +47,8 @@ public final class CreeperCataclysm extends JavaPlugin implements CreeperCatacly
         getCommand("zonemap").setExecutor(new ZoneMapCommand(  this));
         getCommand("reloadconfig").setExecutor(new ReloadConfigCommand(  this));
         getCommand("cancelzone").setExecutor(new CancelZoneCommand(  this));
+        getCommand("setSpecial").setExecutor(new SpecialBlockCommand(  this));
+        getCommand("creepercommands").setExecutor(new CreeperCatCommands(this));
 
         // Register listeners
         Bukkit.getServer().getPluginManager().registerEvents(new EntityDamageListener(this), this);
@@ -49,10 +59,16 @@ public final class CreeperCataclysm extends JavaPlugin implements CreeperCatacly
         Bukkit.getServer().getPluginManager().registerEvents(new PlayerChatListener(this), this);
         Bukkit.getServer().getPluginManager().registerEvents(new EntityExplodeListener(this), this);
         Bukkit.getServer().getPluginManager().registerEvents(new PlayerRespawnListener(this), this);
+
+        gameManager.showGlow();
     }
 
     @Override
     public void onDisable() {
+        ConfigurationSection specialBlocks = config.getConfigurationSection("specialBlocks");
+        specialBlocks.getKeys(false).forEach(key -> {
+            specialBlocks.set(key + ".enabled", true);
+        });
         this.saveConfig();
         if(gameManager.isGameStarted()) {
             gameManager.endGame(0);
@@ -67,6 +83,10 @@ public final class CreeperCataclysm extends JavaPlugin implements CreeperCatacly
     @Override
     public QueueManager getQueueManager() {
         return queueManager;
+    }
+
+    public ProtocolManager getProtocolManager() {
+        return manager;
     }
 
     @Override

@@ -13,6 +13,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 public class PlayerRespawnListener implements Listener {
     private final CreeperCataclysmPlugin plugin;
@@ -27,7 +29,13 @@ public class PlayerRespawnListener implements Listener {
         Player victim = event.getEntity();
         //Set the victim's steak to 8 and arrows to 5
         ItemStack steak = new ItemStack(Material.COOKED_BEEF, 8);
-        ItemStack arrows = new ItemStack(Material.ARROW, 5);
+        ItemStack arrows;
+        if(plugin.getGameManager().getDefenders().contains(victim)){
+            arrows = new ItemStack(Material.ARROW, 3);
+        }
+        else{
+            arrows = new ItemStack(Material.ARROW, 5);
+        }
         for(ItemStack item : victim.getInventory().getContents()){
             if(item == null) continue;
             if(item.getType() == Material.COOKED_BEEF) {
@@ -39,10 +47,6 @@ public class PlayerRespawnListener implements Listener {
         }
         victim.getInventory().addItem(steak);
         victim.getInventory().addItem(arrows);
-
-        if(!plugin.getGameManager().getAttackers().contains(victim)){
-
-        }
 
     }
 }

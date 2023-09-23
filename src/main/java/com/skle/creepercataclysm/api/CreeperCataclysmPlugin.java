@@ -17,4 +17,5 @@ public interface CreeperCataclysmPlugin extends Plugin {
 
     int getMaxPlayers();
     void setMaxPlayers(int maxPlayers);
+
 }

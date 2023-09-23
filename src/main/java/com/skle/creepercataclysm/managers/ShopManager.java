@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.inventory.Inventory;
@@ -18,13 +19,13 @@ import java.util.Map;
 
 public class ShopManager {
     private final CreeperCataclysmPlugin plugin;
+
     private final Inventory defenderShop;
     private final Inventory attackerShop;
 //    private final Location defenderShopLocation = new Location(Bukkit.getWorlds().get(0), 21.5, -59, 83.5, -90, 0);
 //    private final Location attackerShopLocation = new Location(Bukkit.getWorlds().get(0), 21.5, -59, 57.5, -90, 0);
     private Villager defenderVillager;
     private Villager attackerVillager;
-
     private final ShopItem[] defenderShopItems = {
             new ShopItem(Material.STONE_SWORD,
                     5, 0, "Stone Sword", "A sword made of stone.",
@@ -60,39 +61,50 @@ public class ShopManager {
                     new Material[]{}),
             new ShopItem(Material.SHIELD,
                     15, 6, "Shield", "A shield that can be used to block attacks.",
+                    new Material[]{}),
+            new ShopItem(Material.GOAT_HORN,
+                    15, 7, "Goat Horn", "When played it gives ally players near you a strength boost. Try not die with it :)",
                     new Material[]{})
     };
 
     private final ShopItem[] attackerShopItems = {
+            new ShopItem(Material.STONE_SWORD,
+                    5, 0, "Stone Sword", "A sword made of stone.",
+                    new Material[]{ // Items to override
+                            Material.WOODEN_SWORD
+                    }),
             new ShopItem(Material.IRON_SWORD,
-                    5, 0, "Iron Sword", "A sword made of iron.",
+                    10, 1, "Iron Sword", "A sword made of iron.",
                     new Material[]{ // Items to override
                             Material.WOODEN_SWORD,
                             Material.STONE_SWORD
                     }),
             new ShopItem(Material.DIAMOND_SWORD,
-                    10, 1, "Diamond Sword", "A sword made of diamond.",
+                    15, 2, "Diamond Sword", "A sword made of diamond.",
                     new Material[]{ // Items to override
                             Material.WOODEN_SWORD,
                             Material.STONE_SWORD,
                             Material.IRON_SWORD
                     }),
             new ShopItem(Material.NETHERITE_SWORD,
-                    15, 2, "Netherite Sword", "A sword made of netherite.",
-                    new Material[]{ // Items to override
+                    20, 3, "Netherite Sword", "A sword made of netherite.",
+                    new Material[]{ // Items to overrideMateri
                             Material.WOODEN_SWORD,
                             Material.STONE_SWORD,
                             Material.IRON_SWORD,
                             Material.DIAMOND_SWORD
                     }),
             new ShopItem(Material.FIRE_CHARGE,
-                    3, 3, "Fireball", "A fireball that can be thrown at enemies, yourself, or barriers.",
+                    3, 4, "Fireball", "A fireball that can be thrown at enemies, yourself, or barriers.",
                     new Material[]{}),
             new ShopItem(Material.GOLDEN_APPLE,
-                    1, 4, "Golden Apple", "An apple that gives you regeneration",
+                    1, 5, "Golden Apple", "An apple that gives you regeneration",
                     new Material[]{}),
             new ShopItem(Material.SHIELD,
-                    15, 5, "Shield", "A shield that can be used to block attacks.",
+                    15, 6, "Shield", "A shield that can be used to block attacks.",
+                    new Material[]{}),
+            new ShopItem(Material.GOAT_HORN,
+                    15, 7, "Goat Horn", "When played it gives ally players near you a strength boost. Try not die with it :)",
                     new Material[]{})
     };
 
@@ -134,6 +146,9 @@ public class ShopManager {
             ItemMeta purchaseMeta = purchaseStack.getItemMeta();
             purchaseMeta.setDisplayName("§r" + name);
             purchaseMeta.setUnbreakable(true);
+            if(item == Material.GOAT_HORN){
+                purchaseMeta.addEnchant(Enchantment.VANISHING_CURSE, 1, true);
+            }
             purchaseStack.setItemMeta(purchaseMeta);
         }
     }

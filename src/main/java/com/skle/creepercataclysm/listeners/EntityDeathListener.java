@@ -34,28 +34,14 @@ public class EntityDeathListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent event){
         if(!plugin.getGameManager().isGameStarted()) return;
         EntityDamageEvent e = event.getEntity().getLastDamageCause();
-        if(e == null) return;
-        if(!(e instanceof EntityDamageByEntityEvent damageEvent)) return;
-        Object damager = damageEvent.getDamager();
-        if(damager instanceof Arrow arrow) damager = arrow.getShooter();
-        if(!(damager instanceof Player attacker)) return;
+        Player attacker = event.getEntity().getKiller();
         Player victim = event.getEntity();
         if(!(plugin.getGameManager().getPlayers().contains(attacker) && plugin.getGameManager().getPlayers().contains(victim))) return;
-        plugin.getGoldManager().addGold(attacker, 1);
-
-        //Set the victim's steak to 8 and arrows to 5
-        ItemStack steak = new ItemStack(Material.COOKED_BEEF, 8);
-        ItemStack arrows = new ItemStack(Material.ARROW, 5);
-        for(ItemStack item : victim.getInventory().getContents()){
-            if(item == null) continue;
-            if(item.getType() == Material.COOKED_BEEF) {
-                steak.setAmount(steak.getAmount() - item.getAmount());
-            }
-            else if(item.getType() == Material.ARROW) {
-                arrows.setAmount(arrows.getAmount() - item.getAmount());
-            }
+        if(plugin.getGameManager().getKillMap().get(attacker) < 3){
+            plugin.getGameManager().getKillMap().put(attacker, plugin.getGameManager().getKillMap().get(attacker) + 1);
         }
-        victim.getInventory().addItem(steak);
-        victim.getInventory().addItem(arrows);
+        attacker.setHealth(attacker.getHealth() + (attacker.getHealth() > 16 ? (20 - attacker.getHealth()) : 4));
+        plugin.getGoldManager().addGold(attacker, plugin.getGameManager().getKillMap().get(attacker));
+        plugin.getGameManager().getKillMap().put(victim, 0);
     }
 }

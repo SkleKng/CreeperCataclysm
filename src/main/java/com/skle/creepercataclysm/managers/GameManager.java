@@ -1,7 +1,19 @@
 package com.skle.creepercataclysm.managers;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.WrappedDataValue;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.skle.creepercataclysm.api.CreeperCataclysmPlugin;
+import com.skle.creepercataclysm.packets.WrapperPlayServerEntityMetadata;
 import org.bukkit.*;
+
+import java.util.*;
+
+import org.bukkit.block.Block;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
@@ -15,12 +27,13 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.scoreboard.Team;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-import java.util.Random;
 
 public class GameManager {
     private final CreeperCataclysmPlugin plugin;
@@ -29,9 +42,21 @@ public class GameManager {
 
     private boolean gameStarted = false;
 
+    private boolean gameEnded = false;
+
     private List<Player> players = new ArrayList<>();
     private List<Player> defenders = new ArrayList<>();
     private List<Player> attackers = new ArrayList<>();
+
+    private HashMap<Player, Integer> killMap = new HashMap<>();
+    private ScoreboardManager manager;
+
+    private Scoreboard board;
+    private Team scoreAttackers;
+    private Team scoreDefenders;
+
+    private Team seeGlow;
+
 
     private Creeper creeper;
     private BossBar bossBar;
@@ -46,6 +71,8 @@ public class GameManager {
 
     public GameManager(CreeperCataclysmPlugin plugin){
         this.plugin = plugin;
+        manager = Bukkit.getScoreboardManager();
+        board = manager.getMainScoreboard();
         initConfig();
     }
 
@@ -95,6 +122,7 @@ public class GameManager {
         FileConfiguration config = plugin.getPluginConfig();
         ConfigurationSection lobby = config.getConfigurationSection("lobby");
         ConfigurationSection maps = config.getConfigurationSection("maps");
+        ConfigurationSection specialBlocks = config.getConfigurationSection("specialBlocks");
         if(maps == null || lobby == null) {
             Bukkit.getLogger().severe("No maps found in config!");
             Bukkit.getLogger().severe("No maps found in config!");
@@ -117,6 +145,24 @@ public class GameManager {
     }
 
     public void startGame() {
+        gameEnded = false;
+        killMap = new HashMap<>();
+        if(board.getTeam("attackers") != null) {
+            scoreAttackers = board.getTeam("attackers");
+        }
+        else {
+            scoreAttackers = board.registerNewTeam("attackers");
+        }
+        if(board.getTeam("defenders") != null) {
+            scoreDefenders = board.getTeam("defenders");
+        }
+        else {
+            scoreDefenders = board.registerNewTeam("defenders");
+        }
+        scoreDefenders.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OTHER_TEAMS);
+        scoreDefenders.setColor(ChatColor.BLUE);
+        scoreAttackers.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OTHER_TEAMS);
+        scoreAttackers.setColor(ChatColor.RED);
         Bukkit.getLogger().info("Amount of maps: " + maps.size());
         if(maps.size() <= 0) {
             plugin.getQueueManager().getQueue().forEach(player -> player.sendMessage(ChatColor.RED + "No maps found in config!"));
@@ -127,9 +173,6 @@ public class GameManager {
         Bukkit.getLogger().info("Game has begun with map " + currentMap.name + "!");
         this.gameStarted = true;
         initPlayers();
-        initBossBar();
-        initTimer();
-        initCreeper();
         initGold();
         initShop();
         timeLeft = (60 * 5) + ((attackers.size() - 1) * 60);
@@ -151,6 +194,8 @@ public class GameManager {
         creeper.setAI(false);
         int creeperhealth = 500 + (100 * attackers.size());
         creeper.setMaxHealth(creeperhealth);
+        creeper.setMaxFuseTicks(20);
+        creeper.setExplosionRadius(30);
         creeper.setHealth(creeperhealth);
         creeper.setCustomName(ChatColor.GREEN + "CORE");
         creeper.setRemoveWhenFarAway(false);
@@ -163,23 +208,10 @@ public class GameManager {
         Collections.shuffle(players);
         for (int i = 0; i < players.size(); i++) {
             if (i % 2 == 0) {
-                defenders.add(players.get(i));
-                players.get(i).setBedSpawnLocation(currentMap.defenderspawn, true);
-                players.get(i).teleport(currentMap.defenderspawn);
-                players.get(i).sendTitle(ChatColor.BLUE + "You are a defender!", ChatColor.BLUE + "Map: " + currentMap.name, 10, 40, 10);
-                players.get(i).sendMessage(
-                        ChatColor.YELLOW + "§l============================================\n" +
-                        ChatColor.GOLD + "You are a" + ChatColor.BLUE + " §lDefender!\n" +
-                        ChatColor.GOLD + "Defend your creeper from the attackers until time ends!\n" +
-                        ChatColor.GOLD + "You can buy items from the shop using gold!\n" +
-                        ChatColor.GOLD + "Obtain gold by slaying " + ChatColor.RED + "Attackers!\n" +
-                        ChatColor.YELLOW + "§l============================================");
-                setDefaultInventory(players.get(i), 0);
-            } else {
                 attackers.add(players.get(i));
+                scoreAttackers.addEntry(players.get(i).getName());
                 players.get(i).setBedSpawnLocation(currentMap.attackerspawn, true);
                 players.get(i).teleport(currentMap.attackerspawn);
-                players.get(i).addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0));
                 players.get(i).sendTitle(ChatColor.RED + "You are an attacker!", ChatColor.RED + "Map: " + currentMap.name, 10, 40, 10);
                 players.get(i).sendMessage(
                         ChatColor.YELLOW + "§l============================================\n" +
@@ -189,6 +221,20 @@ public class GameManager {
                                 ChatColor.GOLD + "Obtain gold by slaying " + ChatColor.BLUE + "Defenders!\n" +
                                 ChatColor.YELLOW + "§l============================================");
                 setDefaultInventory(players.get(i), 1);
+            } else {
+                defenders.add(players.get(i));
+                scoreDefenders.addEntry(players.get(i).getName());
+                players.get(i).setBedSpawnLocation(currentMap.defenderspawn, true);
+                players.get(i).teleport(currentMap.defenderspawn);
+                players.get(i).sendTitle(ChatColor.BLUE + "You are a defender!", ChatColor.BLUE + "Map: " + currentMap.name, 10, 40, 10);
+                players.get(i).sendMessage(
+                        ChatColor.YELLOW + "§l============================================\n" +
+                                ChatColor.GOLD + "You are a" + ChatColor.BLUE + " §lDefender!\n" +
+                                ChatColor.GOLD + "Defend your creeper from the attackers until time ends!\n" +
+                                ChatColor.GOLD + "You can buy items from the shop using gold!\n" +
+                                ChatColor.GOLD + "Obtain gold by slaying " + ChatColor.RED + "Attackers!\n" +
+                                ChatColor.YELLOW + "§l============================================");
+                setDefaultInventory(players.get(i), 0);
             }
             for (PotionEffect effect : players.get(i).getActivePotionEffects()) {
                 players.get(i).removePotionEffect(effect.getType());
@@ -197,14 +243,18 @@ public class GameManager {
             players.get(i).setFoodLevel(20);
             players.get(i).setHealth(20);
             players.get(i).setSaturation(0);
+            killMap.put(players.get(i), 0);
         }
+        initBossBar();
+        initTimer();
+        initCreeper();
     }
 
     private void setDefaultInventory(Player player, int team) { // 0 - Defender, 1 - Attacker
         player.getInventory().clear();
         player.getInventory().setLeggings(new ItemStack(Material.IRON_LEGGINGS));
         player.getInventory().setBoots(new ItemStack(Material.IRON_BOOTS));
-        player.getInventory().setItem(0, new ItemStack(team == 0 ? Material.WOODEN_SWORD : Material.STONE_SWORD));
+        player.getInventory().setItem(0, new ItemStack(Material.WOODEN_SWORD));
         player.getInventory().setItem(1, new ItemStack(Material.BOW));
         player.getInventory().setItem(2, new ItemStack(Material.FISHING_ROD));
         player.getInventory().setItem(3, new ItemStack(Material.COOKED_BEEF, 8));
@@ -239,10 +289,16 @@ public class GameManager {
             @Override
             public void run() {
                 if(creeper.isDead()) {
+                    bossBar.setProgress(0 / creeper.getMaxHealth());
                     bossBar.setVisible(false);
                     bossBar.removeAll();
+                    Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+                        @Override
+                        public void run() {
+                            endGame(1);
+                        }
+                    }, 40L);
                     cancel();
-                    endGame(1);
                     return;
                 }
                 bossBar.setProgress(creeper.getHealth() / creeper.getMaxHealth());
@@ -278,9 +334,17 @@ public class GameManager {
     }
 
     private void checkPowerups() {
+        if(timeLeft <= totalTime && timeLeft > (totalTime / 2)){
+            for(Player p : attackers) {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0));
+            }
+        }
         if(timeLeft <= (totalTime / 2)){
             for(Player p : attackers) {
                 p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1));
+            }
+            for(Player p : defenders) {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0));
             }
         }
     }
@@ -293,7 +357,54 @@ public class GameManager {
         }
     }
 
+    public void showGlow() {
+        var protocolManager = ProtocolLibrary.getProtocolManager();
+        protocolManager.addPacketListener(new PacketAdapter(plugin, PacketType.Play.Server.ENTITY_METADATA, PacketType.Play.Server.NAMED_ENTITY_SPAWN) {
+            @Override
+            public void onPacketSending(PacketEvent event) {
+                if(isGameStarted()){
+                    for (Player player : getPlayers()) {
+                        Team theGlow = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
+                        if (theGlow != null && theGlow.getEntries().contains(event.getPlayer().getName())) {
+                            if (/*has a player with*/player.getEntityId() == event.getPacket().getIntegers().read(0)) {
+                                WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(event.getPlayer());
+                                if(player.getName().equals(event.getPlayer().getName())){
+                                    return;
+                                }
+                                if (watcher.getWatchableObjects().stream()
+                                        .map(WrappedWatchableObject::getValue)
+                                        .filter(Byte.class::isInstance)
+                                        .map(Byte.class::cast)
+                                        .filter(Objects::nonNull)
+                                        .anyMatch(b -> b == ((byte) 0x40))){
+                                    return;
+                                }
+                                if (event.getPacketType() == PacketType.Play.Server.ENTITY_METADATA) {
+                                    WrapperPlayServerEntityMetadata wrapper = new WrapperPlayServerEntityMetadata();
+                                    // Collect if the entity is already glowing.
+                                    byte data = watcher.getByte(0);
+                                    data |= 1 << 6;
+                                    wrapper.addToDataValueCollection(new WrappedDataValue(0, Registry.get(Byte.class), data));
+                                    wrapper.setEntityID(event.getPlayer().getEntityId());
+                                    wrapper.sendPacket(player);
+                                }
+                                else {
+                                    WrapperPlayServerEntityMetadata newwrapper = new WrapperPlayServerEntityMetadata();
+                                    newwrapper.addToDataValueCollection(new WrappedDataValue(0, Registry.get(Byte.class), (byte) 0));
+                                    newwrapper.setEntityID(event.getPlayer().getEntityId());
+                                    newwrapper.sendPacket(player);
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+        });
+    }
+
     public void endGame(int winner) { // 0 - Defenders, 1 - Attackers
+        gameEnded = false;
         gameStarted = false;
         for(Player p : players) {
             p.setLevel(0);
@@ -305,6 +416,12 @@ public class GameManager {
                 p.removePotionEffect(effect.getType());
             }
             p.setGameMode(GameMode.ADVENTURE);
+        }
+        for (String playerName : scoreAttackers.getEntries()) {
+            scoreAttackers.removeEntry(playerName);
+        }
+        for (String playerName : scoreDefenders.getEntries()) {
+            scoreDefenders.removeEntry(playerName);
         }
         players.clear();
         defenders.clear();
@@ -322,9 +439,26 @@ public class GameManager {
         return gameStarted;
     }
 
+    public void setGameStarted(boolean gameStarted) {
+        this.gameStarted = gameStarted;
+    }
+
+    public boolean isGameEnded() {
+        return gameEnded;
+    }
+
+    public void setGameEnded(boolean gameEnded) {
+        this.gameEnded = gameEnded;
+    }
+
+    public HashMap<Player, Integer> getKillMap() {
+        return killMap;
+    }
+
     public Creeper getCreeper() {
         return creeper;
     }
+
 
     public List<Player> getDefenders() {
         return defenders;
@@ -340,6 +474,10 @@ public class GameManager {
 
     public void setTimeLeft(int timeLeft) {
         this.timeLeft = timeLeft;
+    }
+
+    public int getTimeLeft() {
+        return timeLeft;
     }
 
     public GameMap getCurrentMap() {
