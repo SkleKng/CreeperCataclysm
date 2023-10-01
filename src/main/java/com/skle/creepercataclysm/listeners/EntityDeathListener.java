@@ -36,11 +36,11 @@ public class EntityDeathListener implements Listener {
         EntityDamageEvent e = event.getEntity().getLastDamageCause();
         Player attacker = event.getEntity().getKiller();
         Player victim = event.getEntity();
+        if(attacker.equals(victim)) return;
         if(!(plugin.getGameManager().getPlayers().contains(attacker) && plugin.getGameManager().getPlayers().contains(victim))) return;
         if(plugin.getGameManager().getKillMap().get(attacker) < 3){
             plugin.getGameManager().getKillMap().put(attacker, plugin.getGameManager().getKillMap().get(attacker) + 1);
         }
-        attacker.setHealth(attacker.getHealth() + (attacker.getHealth() > 16 ? (20 - attacker.getHealth()) : 4));
         plugin.getGoldManager().addGold(attacker, plugin.getGameManager().getKillMap().get(attacker));
         plugin.getGameManager().getKillMap().put(victim, 0);
     }

@@ -12,8 +12,10 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDropItemEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
@@ -46,6 +48,12 @@ public class InventoryListener implements Listener {
         if(!(plugin.getGameManager().getPlayers().contains(player))) return;
         Inventory actionInventory = event.getClickedInventory();
         if(actionInventory == null) return;
+        if(event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
+            if(plugin.getShopManager().getDefenderShop().getViewers().contains(player) || plugin.getShopManager().getAttackerShop().getViewers().contains(player)){
+                event.setCancelled(true);
+                return;
+            }
+        }
         if(!(actionInventory.equals(plugin.getShopManager().getDefenderShop())) && !(actionInventory.equals(plugin.getShopManager().getAttackerShop()))) return;
         for(InventoryAction action : actions) {
             if(event.getAction().equals(action)) {
@@ -79,5 +87,10 @@ public class InventoryListener implements Listener {
             specialBlocks.set(blockName, null);
             plugin.reloadPluginConfig();
         }
+    }
+
+    @EventHandler
+    public void onFoodChange(FoodLevelChangeEvent event){
+        event.setCancelled(true);
     }
 }

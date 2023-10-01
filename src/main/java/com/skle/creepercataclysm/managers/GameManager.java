@@ -71,9 +71,6 @@ public class GameManager {
 
     public GameManager(CreeperCataclysmPlugin plugin){
         this.plugin = plugin;
-        manager = Bukkit.getScoreboardManager();
-        board = manager.getMainScoreboard();
-        initConfig();
     }
 
     public void notifyCreeperHit() {
@@ -134,6 +131,7 @@ public class GameManager {
         for(String mapKey : maps.getKeys(false)) { // HOLY SHIT THIS IS AWFUL PLEASE PLEASE PLEASE FIGURE OUT A BETTER WAY
             ConfigurationSection mapData = maps.getConfigurationSection(mapKey);
             String mapName = mapKey;
+            Bukkit.getLogger().info("Loaded Map: " + mapName);
             Location attackerspawn = new Location(Bukkit.getWorld(mapData.getString("attackerspawn.world")), mapData.getDouble("attackerspawn.x"), mapData.getDouble("attackerspawn.y"), mapData.getDouble("attackerspawn.z"), (float)mapData.getDouble("attackerspawn.yaw"), (float)mapData.getDouble("attackerspawn.pitch"));
             Location attackervillager = new Location(Bukkit.getWorld(mapData.getString("attackervillager.world")), mapData.getDouble("attackervillager.x"), mapData.getDouble("attackervillager.y"), mapData.getDouble("attackervillager.z"), (float)mapData.getDouble("attackervillager.yaw"), (float)mapData.getDouble("attackervillager.pitch"));
             Location defenderspawn = new Location(Bukkit.getWorld(mapData.getString("defenderspawn.world")), mapData.getDouble("defenderspawn.x"), mapData.getDouble("defenderspawn.y"), mapData.getDouble("defenderspawn.z"), (float)mapData.getDouble("defenderspawn.yaw"), (float)mapData.getDouble("defenderspawn.pitch"));
@@ -145,6 +143,8 @@ public class GameManager {
     }
 
     public void startGame() {
+        manager = Bukkit.getScoreboardManager();
+        board = manager.getMainScoreboard();
         gameEnded = false;
         killMap = new HashMap<>();
         if(board.getTeam("attackers") != null) {
@@ -198,7 +198,6 @@ public class GameManager {
         creeper.setExplosionRadius(30);
         creeper.setHealth(creeperhealth);
         creeper.setCustomName(ChatColor.GREEN + "CORE");
-        creeper.setRemoveWhenFarAway(false);
     }
 
     private void initPlayers() {
@@ -245,20 +244,33 @@ public class GameManager {
             players.get(i).setSaturation(0);
             killMap.put(players.get(i), 0);
         }
-        initBossBar();
-        initTimer();
-        initCreeper();
+        Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+            @Override
+            public void run() {
+                if(isGameStarted()) {
+                    initBossBar();
+                    initTimer();
+                    initCreeper();
+                }
+            }
+        }, 40L);
     }
 
     private void setDefaultInventory(Player player, int team) { // 0 - Defender, 1 - Attacker
+        int i = 0;
         player.getInventory().clear();
         player.getInventory().setLeggings(new ItemStack(Material.IRON_LEGGINGS));
         player.getInventory().setBoots(new ItemStack(Material.IRON_BOOTS));
-        player.getInventory().setItem(0, new ItemStack(Material.WOODEN_SWORD));
-        player.getInventory().setItem(1, new ItemStack(Material.BOW));
-        player.getInventory().setItem(2, new ItemStack(Material.FISHING_ROD));
-        player.getInventory().setItem(3, new ItemStack(Material.COOKED_BEEF, 8));
-        player.getInventory().setItem(4, new ItemStack(Material.ARROW, (team == 0 ? 3 : 5)));
+        player.getInventory().setItem(i, new ItemStack(Material.WOODEN_SWORD));
+        i++;
+        player.getInventory().setItem(i, new ItemStack(Material.FISHING_ROD));
+        i++;
+        if(!currentMap.name.equals("Scorched Earth")){
+            player.getInventory().setItem(i, new ItemStack(Material.BOW));
+            i++;
+            player.getInventory().setItem(i, new ItemStack(Material.ARROW, (team == 0 ? 3 : 5)));
+        }
+
 
         ItemStack goldIngot = new ItemStack(Material.GOLD_INGOT, 1); // TODO: This doesn't work, from looks of it not possible anymore
         goldIngot.setAmount(0);
@@ -295,7 +307,9 @@ public class GameManager {
                     Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
                         @Override
                         public void run() {
-                            endGame(1);
+                            if(isGameStarted()) {
+                                endGame(1);
+                            }
                         }
                     }, 40L);
                     cancel();
@@ -337,11 +351,6 @@ public class GameManager {
         if(timeLeft <= totalTime && timeLeft > (totalTime / 2)){
             for(Player p : attackers) {
                 p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0));
-            }
-        }
-        if(timeLeft <= (totalTime / 2)){
-            for(Player p : attackers) {
-                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1));
             }
             for(Player p : defenders) {
                 p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0));
