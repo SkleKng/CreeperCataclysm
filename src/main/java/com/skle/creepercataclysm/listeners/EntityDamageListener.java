@@ -17,6 +17,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 public class EntityDamageListener implements Listener {
@@ -56,6 +57,7 @@ public class EntityDamageListener implements Listener {
                 attacker = player;
                 if((!(plugin.getGameManager().getAttackers().contains(attacker) && plugin.getGameManager().getAttackers().contains(attacked))) && (!(plugin.getGameManager().getDefenders().contains(attacker) && plugin.getGameManager().getDefenders().contains(attacked))) ){
                     attacker.getInventory().addItem(new ItemStack(Material.ARROW, 1));
+                    updateDamage(attacker, attacked, event.getDamage());
                 }
 
             }
@@ -98,13 +100,16 @@ public class EntityDamageListener implements Listener {
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) throws InterruptedException {
-        if(!plugin.getGameManager().isGameStarted()) return;
-        if(event.getEntity() instanceof Player) {
+        if(event.getEntity() instanceof Player player) {
             if(event.getCause() == EntityDamageEvent.DamageCause.FALL) {
                 event.setCancelled(true);
+                if(player.getLocation().getY() == -60 && player.getLocation().getBlock().getType() == Material.LAVA){
+                    player.setHealth(0);
+                }
             }
         }
 
+        if(!plugin.getGameManager().isGameStarted()) return;
         if(event.getEntity().equals(plugin.getGameManager().getCreeper())) {
             if(plugin.getGameManager().getCreeper().getHealth() - event.getDamage() <= 0) {
                 event.setCancelled(true);
@@ -140,12 +145,44 @@ public class EntityDamageListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerHitPlayer(EntityDamageByEntityEvent event){
+    public void onPlayerHitPlayerEnd(EntityDamageByEntityEvent event){
         if(!plugin.getGameManager().isGameStarted()) return;
         if(!plugin.getGameManager().isGameEnded()) return;
         if(event.getEntity() instanceof Player a && event.getDamager() instanceof Player b){
             if(plugin.getGameManager().getPlayers().contains(a) && plugin.getGameManager().getPlayers().contains(b)){
                 event.setCancelled(true);
+            }
+        }
+    }
+
+    public void updateDamage(Player attacker, Player victim, double damage) {
+        if (plugin.getGameManager().getDamageMap().containsKey(victim)) {
+            HashMap<Player, Double> victimDamageMap = plugin.getGameManager().getDamageMap().get(victim);
+
+            if (victimDamageMap.containsKey(attacker)) {
+                double currentDamage = victimDamageMap.get(attacker);
+                victimDamageMap.put(attacker, currentDamage + damage);
+            } else {
+                victimDamageMap.put(attacker, damage);
+            }
+        } else {
+            HashMap<Player, Double> victimDamageMap = new HashMap<>();
+            victimDamageMap.put(attacker, damage);
+
+            plugin.getGameManager().getDamageMap().put(victim, victimDamageMap);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerHitPlayer(EntityDamageByEntityEvent event){
+        if(!plugin.getGameManager().isGameStarted()) return;
+        if(event.getDamager().equals(event.getEntity())) return;
+        if(event.getEntity().equals(plugin.getGameManager().getCreeper()) && event.getDamager() instanceof Player attacker) {
+            plugin.getGameManager().getTotalCreeperDamage().put(attacker, plugin.getGameManager().getTotalCreeperDamage().get(attacker) + event.getDamage());
+        }
+        if(event.getEntity() instanceof Player victim && event.getDamager() instanceof Player attacker){
+            if(plugin.getGameManager().getPlayers().contains(victim) && plugin.getGameManager().getPlayers().contains(attacker)){
+                updateDamage(attacker, victim, event.getDamage());
             }
         }
     }

@@ -105,7 +105,9 @@ public class EntityInteractListener implements Listener {
         Block block = player.getLocation().subtract(0, 1, 0).getBlock();
         String blockName = "Block" + block.getLocation().getBlockX() + block.getLocation().getBlockY() + block.getLocation().getBlockZ();
         ConfigurationSection config = plugin.getConfig().getConfigurationSection("specialBlocks");
-
+        if(player.getLocation().getY() == -60 && player.getLocation().getBlock().getType() == Material.LAVA){
+            player.setHealth(0);
+        }
         if(config.contains(blockName) && player.getWorld().getName().equals(config.getString(blockName + ".world"))) {
             if(config.getBoolean(blockName + ".enabled")) {
                 player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 80, 2));

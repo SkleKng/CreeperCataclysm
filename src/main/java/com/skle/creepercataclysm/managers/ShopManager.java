@@ -33,37 +33,22 @@ public class ShopManager {
                             Material.WOODEN_SWORD
                     }),
             new ShopItem(Material.IRON_SWORD,
-                    10, 1, "Iron Sword", "A sword made of iron.",
+                    15, 1, "Iron Sword", "A sword made of iron.",
                     new Material[]{ // Items to override
                             Material.WOODEN_SWORD,
                             Material.STONE_SWORD
                     }),
-            new ShopItem(Material.DIAMOND_SWORD,
-                    15, 2, "Diamond Sword", "A sword made of diamond.",
-                    new Material[]{ // Items to override
-                            Material.WOODEN_SWORD,
-                            Material.STONE_SWORD,
-                            Material.IRON_SWORD
-                    }),
-            new ShopItem(Material.NETHERITE_SWORD,
-                    20, 3, "Netherite Sword", "A sword made of netherite.",
-                    new Material[]{ // Items to overrideMateri
-                            Material.WOODEN_SWORD,
-                            Material.STONE_SWORD,
-                            Material.IRON_SWORD,
-                            Material.DIAMOND_SWORD
-                    }),
             new ShopItem(Material.FIRE_CHARGE,
-                    3, 4, "Fireball", "A fireball that can be thrown at enemies, yourself, or barriers.",
+                    2, 2, "Fireball", "A fireball that can be thrown at enemies, yourself, or barriers.",
                     new Material[]{}),
             new ShopItem(Material.GOLDEN_APPLE,
-                    1, 5, "Golden Apple", "An apple that gives you regeneration",
+                    1, 3, "Golden Apple", "An apple that gives you regeneration",
                     new Material[]{}),
             new ShopItem(Material.SHIELD,
-                    15, 6, "Shield", "A shield that can be used to block attacks.",
+                    15, 4, "Shield", "A shield that can be used to block attacks.",
                     new Material[]{}),
             new ShopItem(Material.GOAT_HORN,
-                    15, 7, "Goat Horn", "When played it gives ally players near you a strength boost. Try not die with it :)",
+                    5, 5, "Goat Horn", "When played it gives ally players near you a strength boost. Try not die with it :)",
                     new Material[]{})
     };
 
@@ -74,37 +59,22 @@ public class ShopManager {
                             Material.WOODEN_SWORD
                     }),
             new ShopItem(Material.IRON_SWORD,
-                    10, 1, "Iron Sword", "A sword made of iron.",
+                    15, 1, "Iron Sword", "A sword made of iron.",
                     new Material[]{ // Items to override
                             Material.WOODEN_SWORD,
                             Material.STONE_SWORD
                     }),
-            new ShopItem(Material.DIAMOND_SWORD,
-                    15, 2, "Diamond Sword", "A sword made of diamond.",
-                    new Material[]{ // Items to override
-                            Material.WOODEN_SWORD,
-                            Material.STONE_SWORD,
-                            Material.IRON_SWORD
-                    }),
-            new ShopItem(Material.NETHERITE_SWORD,
-                    20, 3, "Netherite Sword", "A sword made of netherite.",
-                    new Material[]{ // Items to overrideMateri
-                            Material.WOODEN_SWORD,
-                            Material.STONE_SWORD,
-                            Material.IRON_SWORD,
-                            Material.DIAMOND_SWORD
-                    }),
             new ShopItem(Material.FIRE_CHARGE,
-                    3, 4, "Fireball", "A fireball that can be thrown at enemies, yourself, or barriers.",
+                    2, 2, "Fireball", "A fireball that can be thrown at enemies, yourself, or barriers.",
                     new Material[]{}),
             new ShopItem(Material.GOLDEN_APPLE,
-                    1, 5, "Golden Apple", "An apple that gives you regeneration",
+                    1, 3, "Golden Apple", "An apple that gives you regeneration",
                     new Material[]{}),
             new ShopItem(Material.SHIELD,
-                    15, 6, "Shield", "A shield that can be used to block attacks.",
+                    15, 4, "Shield", "A shield that can be used to block attacks.",
                     new Material[]{}),
             new ShopItem(Material.GOAT_HORN,
-                    15, 7, "Goat Horn", "When played it gives ally players near you a strength boost. Try not die with it :)",
+                    5, 5, "Goat Horn", "When played it gives ally players near you a strength boost. Try not die with it :)",
                     new Material[]{})
     };
 
@@ -146,9 +116,6 @@ public class ShopManager {
             ItemMeta purchaseMeta = purchaseStack.getItemMeta();
             purchaseMeta.setDisplayName("§r" + name);
             purchaseMeta.setUnbreakable(true);
-            if(item == Material.GOAT_HORN){
-                purchaseMeta.addEnchant(Enchantment.VANISHING_CURSE, 1, true);
-            }
             purchaseStack.setItemMeta(purchaseMeta);
         }
     }

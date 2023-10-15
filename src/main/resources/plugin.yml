@@ -29,6 +29,10 @@ commands:
     description: Abort the game
     usage: /<command>
     aliases: [a]
+  tpsnow:
+    description: Teleport to the snow
+    usage: /<command>
+    aliases: []
   forcestart:
     description: Force start the game
     usage: /<command>
@@ -61,3 +65,12 @@ commands:
     description: List all the commands
     usage: /<command>
     aliases: [cc, helpcreeper]
+  switchteam:
+    description: Switch teams
+    usage: /<command>
+    aliases: [st]
+  resetdeaths:
+    description: Reset the deaths of all players
+    usage: /<command>
+    aliases: [rd]
+

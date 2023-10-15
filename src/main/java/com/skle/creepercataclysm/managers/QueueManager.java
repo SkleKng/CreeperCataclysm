@@ -50,18 +50,6 @@ public class QueueManager {
         queue.remove(player);
     }
 
-    public void notifyGameStart() {
-        for (Player p : queue) {
-            p.sendMessage(ChatColor.AQUA + "The game has started!");
-        }
-    }
-
-    public void notifyGameEnd(int winner) { // 0 - defender, 1 - attacker
-        for (Player p : queue) {
-            p.sendMessage(ChatColor.AQUA + "The " + (winner == 0 ? "defenders" : "attackers") + " have won!");
-        }
-    }
-
     public List<Player> getQueue() {
         return queue;
     }

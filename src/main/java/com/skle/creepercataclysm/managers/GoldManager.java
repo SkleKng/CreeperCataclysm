@@ -45,6 +45,23 @@ public class GoldManager {
     }
 
     /**
+     * Returns the amount of gold nuggets a player has in their inventory
+     * @param player
+     * @return gold nugget amount
+     */
+    public int getGoldNugsInInventory(Player player) {
+        //return the total amount of gold ingots in the players inventory
+        int goldNugs = 0;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item != null && item.getType() == Material.GOLD_NUGGET) {
+                goldNugs += item.getAmount();
+            }
+        }
+        Bukkit.getLogger().info("Gold in " + player.getName() + "'s inventory: " + goldNugs);
+        return goldNugs;
+    }
+
+    /**
      * Sets the amount of gold a player has
      * @param player player to set gold for
      * @param amount amount of gold to set
@@ -59,10 +76,36 @@ public class GoldManager {
         setPlayerVisibleGold(player, -amount);
     }
 
+    /**
+     * Sets the amount of gold a player has
+     * @param player player to set gold for
+     * @param amount amount of gold to set
+     */
+    public void addGoldNug(Player player, int amount) {
+        if(getGoldNugsInInventory(player) + amount == 2){
+            removeGoldNug(player, 2);
+            addGold(player, 1);
+        }
+        else{
+            setPlayerVisibleGoldNugs(player, amount);
+        }
+    }
+
+    public void removeGoldNug(Player player, int amount) {
+        setPlayerVisibleGoldNugs(player, -amount);
+    }
+
     private void setPlayerVisibleGold(Player player, int amount) {
         if(amount > 0)
             player.getInventory().addItem(new ItemStack(Material.GOLD_INGOT, amount));
         else if(amount < 0)
             player.getInventory().removeItem(new ItemStack(Material.GOLD_INGOT, -amount));
+    }
+
+    private void setPlayerVisibleGoldNugs(Player player, int amount) {
+        if(amount > 0)
+            player.getInventory().addItem(new ItemStack(Material.GOLD_NUGGET, amount));
+        else if(amount < 0)
+            player.getInventory().removeItem(new ItemStack(Material.GOLD_NUGGET, -amount));
     }
 }
